@@ -26,10 +26,7 @@ impl Component for Model {
                 self.value += 1;
                 // the value has changed so we need to
                 // re-render for it to appear on the page
-                true
-            }
-            Msg::SubOne => {
-                self.value -= 1;
+                true } Msg::SubOne => { self.value -= 1;
                 true
             }
         }
@@ -44,13 +41,35 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         html! {
-            <div>
-                <button onclick=self.link.callback(|_| Msg::AddOne)>{ "+1" }</button>
-                <button onclick=self.link.callback(|_| Msg::SubOne)>{ "-1" }</button>
-                <p>{ self.value }</p>
+            <div id="container">
+                <h1><a title="web_video_chat in rust" style="color: white;">{"Web Video Chat in Rust"}</a></h1>
+                <label id="sessionid_heading" style="color: rgb(145, 133, 197);">{"Hosting Session ID:"}</label> 
+                <label id="sessionid_lbl" style="color: rgb(143, 137, 201);"></label>
+                <br/>
+                <label id="session_connection_status" style="color: rgb(255, 255, 255);"></label>
+                <label id="session_connection_status_error" style="color: rgb(200, 10, 10);"></label>
+                <h3><a title="Peer A Video" style="color: white; ">{"Peer A Video"}</a></h3>
+                <video id="peer_a_video" width="320" height="240" style="color: white; outline-style: solid;" autoplay="muted"></video>
+                <br/>
+                <button id="connect_to_session" style="height:50px">{"Connect to Session"}</button>
+                <input type="text" id="sid_input" name="sid_input"/>
+                <br/>
+                <hr/>
+                <h3><a title="Peer B Video" style="color: white; ">{"Peer B Video"}</a></h3>
+                <video id="peer_b_video" width="320" height="240" style="color: white; outline-style: solid;" autoplay="muted playsinline"></video>
+                <br/>
+                <button id="start_session" style="height:50px">{"Start Session"}</button>
+                <hr/>
+                <button id="debug_client_state" style="height:50px">{"Print Client State"}</button>
+                <label id="ws_conn_lbl" style="color: rgb(29, 161, 69);"></label> 
+                <br/>
+                <button id="debug_signal_server_state" style="height:50px">{"Print Signalling Server State(In Terminal)"}</button>
+                <label id="ws_conn_lbl_err" style="color: red;"></label>
+                <br/>
             </div>
         }
-    }
+  } 
+    
 }
 
 fn main() {
