@@ -1,15 +1,13 @@
 use yew::prelude::*;
 
 enum Msg {
-    AddOne,
-    SubOne,
+
 }
 
 struct Model {
     // `ComponentLink` is like a reference to a component.
     // It can be used to send messages to the component
     link: ComponentLink<Self>,
-    value: i64,
 }
 
 impl Component for Model {
@@ -17,19 +15,11 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self { link, value: 0 }
+        Self { link }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
-            Msg::AddOne => {
-                self.value += 1;
-                // the value has changed so we need to
-                // re-render for it to appear on the page
-                true } Msg::SubOne => { self.value -= 1;
-                true
-            }
-        }
+    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+        true
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
@@ -41,35 +31,25 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         html! {
-            <div id="container">
-                <h1><a title="web_video_chat in rust" style="color: white;">{"Web Video Chat in Rust"}</a></h1>
-                <label id="sessionid_heading" style="color: rgb(145, 133, 197);">{"Hosting Session ID:"}</label> 
-                <label id="sessionid_lbl" style="color: rgb(143, 137, 201);"></label>
+            <div class="uk-position-center uk-background-default">
+                <h1 class="uk-heading-medium">{"Web Video Chat in Rust"}</h1>
+                <span class="uk-label">{"Hosting Session ID:"}</span>
+                <h1 class="uk-heading-small">{"Peer A Video"}</h1>
+                <video width="320" height="240" style="color: black; outline-style: solid;" autoplay="muted"></video>
                 <br/>
-                <label id="session_connection_status" style="color: rgb(255, 255, 255);"></label>
-                <label id="session_connection_status_error" style="color: rgb(200, 10, 10);"></label>
-                <h3><a title="Peer A Video" style="color: white; ">{"Peer A Video"}</a></h3>
-                <video id="peer_a_video" width="320" height="240" style="color: white; outline-style: solid;" autoplay="muted"></video>
-                <br/>
-                <button id="connect_to_session" style="height:50px">{"Connect to Session"}</button>
-                <input type="text" id="sid_input" name="sid_input"/>
-                <br/>
+                <button class="uk-button uk-button-default">{"Connect to Session"}</button>
+                <input type="text" class="uk-input"/>
                 <hr/>
-                <h3><a title="Peer B Video" style="color: white; ">{"Peer B Video"}</a></h3>
-                <video id="peer_b_video" width="320" height="240" style="color: white; outline-style: solid;" autoplay="muted playsinline"></video>
+                <h1 class="uk-heading-small">{"Peer B Video"}</h1>
+                <video width="320" height="240" style="color: black; outline-style: solid;" autoplay="muted playsinline"></video>
                 <br/>
-                <button id="start_session" style="height:50px">{"Start Session"}</button>
+                <button class="uk-button uk-button-default">{"Start Session"}</button>
                 <hr/>
-                <button id="debug_client_state" style="height:50px">{"Print Client State"}</button>
-                <label id="ws_conn_lbl" style="color: rgb(29, 161, 69);"></label> 
-                <br/>
-                <button id="debug_signal_server_state" style="height:50px">{"Print Signalling Server State(In Terminal)"}</button>
-                <label id="ws_conn_lbl_err" style="color: red;"></label>
-                <br/>
+                <button class="uk-button uk-button-default">{"Print Client State"}</button>
+                <button class="uk-button uk-button-default">{"Print Signalling Server State(In Terminal)"}</button>
             </div>
         }
-  } 
-    
+    }
 }
 
 fn main() {
