@@ -2,3 +2,5 @@
 .idea
 Cargo.lock
 /dist
+/uikit
+style.scss
