@@ -1,6 +1,8 @@
-/target
 .idea
-Cargo.lock
+/target
 /dist
+/testing
 /uikit
+Cargo.lock
 style.scss
+localhost.pem
