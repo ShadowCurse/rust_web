@@ -1,8 +1,14 @@
 #!/bin/python
 
-import http.server, ssl, os
+import http.server
+import os
+import ssl
+import sys
 
-os.chdir("./dist")
+if len(sys.argv) == 2:
+    os.chdir("./testing")
+else:
+    os.chdir("./dist")
 
 server_address = ('0.0.0.0', 443)
 httpd = http.server.HTTPServer(server_address, http.server.SimpleHTTPRequestHandler)
