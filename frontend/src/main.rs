@@ -2,6 +2,8 @@ use wasm_bindgen::*;
 use web_sys::*;
 use yew::prelude::*;
 
+mod websockets;
+
 enum Msg {
     StartSession,
     GotMedia(MediaStream),
@@ -12,6 +14,9 @@ struct Model {
     // `ComponentLink` is like a reference to a component.
     // It can be used to send messages to the component
     link: ComponentLink<Self>,
+    server_socket: String,
+    local_stream: Option<MediaStream>,
+    web_socket: Option<WebSocket>,
 }
 
 impl Component for Model {
@@ -19,7 +24,12 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self { link }
+        Self {
+            link,
+            server_socket: "wss://192.168.88.41:9999".to_string(),
+            local_stream: None,
+            web_socket: None,
+        }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -38,6 +48,14 @@ impl Component for Model {
             Msg::GotMedia(media) => {
                 console::log_1(&"successfully".into());
                 console::log_2(&"media_stream: {}".into(), &media);
+                self.local_stream = Some(media);
+                self.web_socket = match websockets::open_web_socket(&self.server_socket) {
+                    Ok(socket) => Some(socket),
+                    Err(e) => {
+                        console::log_1(&format!("could not create web socket: {:?}", e).into());
+                        None
+                    }
+                };
             }
             Msg::FailedMedia(e) => {
                 console::log_1(&format!("failed with error: {:?}", e).into());
@@ -59,14 +77,16 @@ impl Component for Model {
             <div class="uk-position-center uk-background-default">
                 <h1 class="uk-heading-medium">{"Web Video Chat in Rust"}</h1>
                 <span class="uk-label">{"Hosting Session ID:"}</span>
+                <br/>
+                <span class="uk-label">{"Current server web socket: "}{ &self.server_socket }</span>
                 <h1 class="uk-heading-small">{"Peer A Video"}</h1>
-                <video width="320" height="240" style="color: black; outline-style: solid;" autoplay=false></video>
+                <video width="320" height="240" style="color: black; outline-style: solid;" autoplay=true></video>
                 <br/>
                 <button class="uk-button uk-button-default">{"Connect to Session"}</button>
                 <input type="text" class="uk-input"/>
                 <hr/>
                 <h1 class="uk-heading-small">{"Peer B Video"}</h1>
-                <video id="local_video" width="320" height="240" style="color: black; outline-style: solid;" autoplay=false></video>
+                <video id="local_video" width="320" height="240" style="color: black; outline-style: solid;" autoplay=true></video>
                 <br/>
                 <button class="uk-button uk-button-default" onclick={start_session}>{"Start Session"}</button>
                 <hr/>
