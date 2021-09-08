@@ -6,3 +6,5 @@
 Cargo.lock
 style.scss
 localhost.pem
+cert.crt
+key.rsa

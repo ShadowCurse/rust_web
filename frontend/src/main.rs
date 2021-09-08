@@ -8,6 +8,7 @@ enum Msg {
     StartSession,
     GotMedia(MediaStream),
     FailedMedia(JsValue),
+    TestSocket,
 }
 
 struct Model {
@@ -26,7 +27,7 @@ impl Component for Model {
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
-            server_socket: "wss://192.168.88.41:9999".to_string(),
+            server_socket: "wss://192.168.88.169:9999".to_string(),
             local_stream: None,
             web_socket: None,
         }
@@ -60,6 +61,14 @@ impl Component for Model {
             Msg::FailedMedia(e) => {
                 console::log_1(&format!("failed with error: {:?}", e).into());
             }
+            Msg::TestSocket => match self.web_socket.as_ref() {
+                Some(socket) => {
+                    let _ = socket.send_with_str(&"test".to_string());
+                }
+                None => {
+                    console::log_1(&"web socket not opened".into());
+                }
+            },
         }
         true
     }
@@ -73,6 +82,7 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         let start_session = self.link.callback(|_| Msg::StartSession);
+        let test_socket = self.link.callback(|_| Msg::TestSocket);
         html! {
             <div class="uk-position-center uk-background-default">
                 <h1 class="uk-heading-medium">{"Web Video Chat in Rust"}</h1>
@@ -90,7 +100,7 @@ impl Component for Model {
                 <br/>
                 <button class="uk-button uk-button-default" onclick={start_session}>{"Start Session"}</button>
                 <hr/>
-                <button class="uk-button uk-button-default">{"Print Client State"}</button>
+                <button class="uk-button uk-button-default" onclick={test_socket}>{"Test socket"}</button>
                 <button class="uk-button uk-button-default">{"Print Signalling Server State(In Terminal)"}</button>
             </div>
         }
@@ -105,20 +115,16 @@ impl Model {
         let mut constrains = MediaStreamConstraints::new();
         constrains.audio(&JsValue::FALSE);
         constrains.video(&JsValue::TRUE);
-        let stream_promise = media_device
-            .get_user_media_with_constraints(&constrains)?;
+        let stream_promise = media_device.get_user_media_with_constraints(&constrains)?;
 
         let doc = window.document().ok_or("no doc found")?;
         let video_element = doc
             .get_element_by_id("local_video")
             .expect("no local_video element");
-        let video_element = video_element
-            .dyn_into::<HtmlVideoElement>()?;
+        let video_element = video_element.dyn_into::<HtmlVideoElement>()?;
 
         let media_stream = match wasm_bindgen_futures::JsFuture::from(stream_promise).await {
-            Ok(ms) => {
-                MediaStream::from(ms)
-            }
+            Ok(ms) => MediaStream::from(ms),
             Err(e) => {
                 return Err(format!("error in getting media stream: {:?}", e).into());
             }
