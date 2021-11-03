@@ -43,30 +43,10 @@ impl std::fmt::Display for SessionStatus {
 }
 
 pub fn log(msg: &str) {
-    let window = web_sys::window().unwrap();
-    let doc = window.document().unwrap();
-    let log_element = doc.get_element_by_id("log").expect("no log element");
-    let log = log_element.dyn_into::<HtmlTextAreaElement>().unwrap();
-
-    log.set_value(&format!("{}\n{}", log.value(), msg));
     console::log_1(&msg.into());
 }
 
 pub fn log_error(msg: &str) {
-    let window = web_sys::window().unwrap();
-    let doc = window.document().unwrap();
-    let log_element = doc.get_element_by_id("log").expect("no log element");
-    let log = log_element.dyn_into::<HtmlTextAreaElement>().unwrap();
-
-    log.set_value(&format!(
-        "
-            {}
-            =========== ERROR ============
-            {}
-            =========== ERROR ============",
-        log.value(),
-        msg
-    ));
     console::log_1(&msg.into());
 }
 
@@ -90,7 +70,7 @@ impl Component for Model {
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let model_data = Rc::new(RefCell::new(ModelData {
-            server_socket: "wss://192.168.88.54:9999".to_string(),
+            server_socket: "wss://0.0.0.0:9999".to_string(),
             local_stream: None,
             web_socket: None,
             rtc_connection: RtcPeerConnection::new().unwrap_throw(),
@@ -116,6 +96,7 @@ impl Component for Model {
                         Err(e) => Msg::FailedMedia(e),
                     }
                 });
+                
 
                 log("Initializing websocket");
                 match self.open_web_socket() {
@@ -131,7 +112,11 @@ impl Component for Model {
             }
             Msg::CreatedMedia(media) => {
                 log("successfully create media device");
-                self.data.borrow_mut().local_stream = Some(media);
+                self.data.borrow_mut().local_stream = Some(media.clone());
+
+                self.data.borrow()
+                    .rtc_connection 
+                    .add_stream(&media);
             }
             Msg::FailedMedia(e) => {
                 log_error(&format!(
@@ -219,7 +204,10 @@ impl Component for Model {
         html! {
             <div class="uk-position-center uk-background-default">
                 <h1 class="uk-heading-medium">{"Web Video Chat in Rust"}</h1>
-                <span class="uk-label">{"Hosting Session ID: "}{ &self.data.borrow().session_id.value() }{" Status: "}{ &self.data.borrow().session_status }</span>
+                <span class="uk-label">{"Hosting Session ID: "}</span>
+                <span class="uk-text-default">{ &self.data.borrow().session_id.value() }</span>
+                <br/>
+                <span class="uk-label">{" Status: "}{ &self.data.borrow().session_status }</span>
                 <br/>
                 <span class="uk-label">{"Current server web socket: "}{ &self.data.borrow().server_socket }</span>
                 <h1 class="uk-heading-small">{"Peer A Video"}</h1>
@@ -235,7 +223,6 @@ impl Component for Model {
                 <hr/>
                 <button class="uk-button uk-button-default" onclick={create_session}>{"Create session"}</button>
                 <br/>
-                <textarea id="log" rows="20" class="uk-textarea"></textarea>
             </div>
         }
     }
@@ -246,11 +233,7 @@ impl Model {
         let window = web_sys::window().ok_or("no window found")?;
         let navigator = window.navigator();
         let media_device = navigator.media_devices()?;
-        let mut constrains = MediaStreamConstraints::new();
-        constrains.audio(&JsValue::FALSE);
-        constrains.video(&JsValue::TRUE);
-        let stream_promise = media_device.get_user_media_with_constraints(&constrains)?;
-
+        let stream_promise = media_device.get_display_media()?; 
         let doc = window.document().ok_or("no doc found")?;
         let video_element = doc
             .get_element_by_id("local_video")
@@ -329,9 +312,12 @@ impl Model {
             Signal::SessionJoinSuccess(session_id) => {
                 data.borrow_mut().session_status = SessionStatus::Connected;
 
-                data.borrow()
-                    .rtc_connection
-                    .add_stream(data.borrow().local_stream.as_ref().unwrap());
+                setup_rtc_connection_ice(
+                    &data.borrow().rtc_connection,
+                    session_id.clone(),
+                    data.borrow().web_socket.as_ref().unwrap().clone(),
+                );
+
                 let offer = create_sdp_offer(&data.borrow().rtc_connection).await?;
 
                 let msg = Signal::VideoOffer(session_id, offer.into());

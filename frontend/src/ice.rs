@@ -57,19 +57,6 @@ pub fn setup_rtc_connection_ice(
             Box::new(move || match connection_clone.ice_connection_state() {
                 RtcIceConnectionState::Connected => {
                     log("RtcIceConnectionState::Connected");
-                    let remote_streams = connection_clone.get_remote_streams().to_vec();
-
-                    // for now handles only 1 stream
-                    let first_stream = remote_streams[0].clone();
-                    let media_stream: MediaStream = first_stream.try_into().unwrap();
-
-                    let window = web_sys::window().unwrap();
-                    let doc = window.document().unwrap();
-                    let video_element = doc
-                        .get_element_by_id("external_video")
-                        .expect("no external_video element");
-                    let video_element = video_element.dyn_into::<HtmlVideoElement>().unwrap();
-                    video_element.set_src_object(Some(&media_stream));
                 }
                 _ => {
                     log_error(&format!(
@@ -81,6 +68,25 @@ pub fn setup_rtc_connection_ice(
         );
     connection.set_oniceconnectionstatechange(Some(on_ice_state_change.as_ref().unchecked_ref()));
     on_ice_state_change.forget();
+
+    let connection_clone = connection.clone();
+    let on_add_stream = Closure::wrap(Box::new(move || {
+        let remote_streams = connection_clone.get_remote_streams().to_vec();
+
+        // for now handles only 1 stream
+        let first_stream = remote_streams[0].clone();
+        let media_stream: MediaStream = first_stream.try_into().unwrap();
+
+        let window = web_sys::window().unwrap();
+        let doc = window.document().unwrap();
+        let video_element = doc
+            .get_element_by_id("external_video")
+            .expect("no external_video element");
+        let video_element = video_element.dyn_into::<HtmlVideoElement>().unwrap();
+        video_element.set_src_object(Some(&media_stream));
+    }) as Box<dyn FnMut()>);
+    connection.set_onaddstream(Some(on_add_stream.as_ref().unchecked_ref()));
+    on_add_stream.forget();
     log("ok");
 }
 
